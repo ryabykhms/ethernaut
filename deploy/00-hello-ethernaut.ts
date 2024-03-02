@@ -1,17 +1,23 @@
-import { ethers } from 'hardhat';
+import { deployments, getNamedAccounts } from 'hardhat';
 
 async function main() {
   console.log('Deploying HelloEthernaut contract...');
 
-  const helloEthernaut = await ethers.deployContract('HelloEthernaut', ['ethernaut0']);
+  const { deploy } = deployments;
+  const { deployer } = await getNamedAccounts();
 
-  await helloEthernaut.waitForDeployment();
+  const args = ['ethernaut0'];
 
-  const address = await helloEthernaut.getAddress();
+  const helloEthernaut = await deploy('HelloEthernaut', {
+    from: deployer,
+    args,
+    log: true,
+    waitConfirmations: 1,
+  });
 
-  console.log(`HelloEthernaut contract has been successfully deployed to ${address}!`);
+  console.log(`HelloEthernaut contract has been successfully deployed to ${helloEthernaut.address}!`);
 
-  return address;
+  return helloEthernaut.address;
 }
 
 export default main;

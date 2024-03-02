@@ -39,6 +39,15 @@ const config: HardhatUserConfig = {
       chainId: 1337,
     },
   },
+  namedAccounts: {
+    deployer: {
+      default: 0,
+    },
+
+    user: {
+      default: 1,
+    },
+  },
 };
 
 export default config;
