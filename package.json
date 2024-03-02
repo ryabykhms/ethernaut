@@ -4,6 +4,7 @@
   "description": "My Ethernaut CTF Solutions",
   "main": "index.js",
   "scripts": {
+    "pass:00-hello-ethernaut": "yarn hardhat run scripts/00-hello-ethernaut.ts",
     "coverage": "yarn hardhat coverage",
     "test": "yarn hardhat test"
   },
