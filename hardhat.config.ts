@@ -44,7 +44,7 @@ const config: HardhatUserConfig = {
       default: 0,
     },
 
-    user: {
+    hacker: {
       default: 1,
     },
   },
