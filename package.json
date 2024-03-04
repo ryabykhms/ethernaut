@@ -6,6 +6,7 @@
   "scripts": {
     "pass:00-hello-ethernaut": "yarn hardhat run scripts/00-hello-ethernaut.ts",
     "pass:01-fallback": "yarn hardhat run scripts/01-fallback.ts",
+    "pass:02-fallout": "yarn hardhat run scripts/02-fallout.ts",
     "coverage": "yarn hardhat coverage",
     "test": "yarn hardhat test"
   },

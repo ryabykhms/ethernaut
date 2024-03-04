@@ -24,6 +24,16 @@ My [Ethernaut](https://ethernaut.openzeppelin.com/) CTF Solutions.
 </ol>
 </details>
 
+<details>
+<summary>
+<a href="#02-fallout">02. Fallout</a>
+</summary>
+<ol>
+    <li><a href="./contracts/02-fallout/">Contracts</a></li>
+    <li><a href="./scripts/02-fallout.ts">Script</a></li>
+</ol>
+</details>
+
 ## 00. Hello Ethernaut
 
 This is a warm-up task. Call `await contract.info()` in the console and follow the instructions.
@@ -213,3 +223,121 @@ Congratulations! :wink: Let's move on to the next challenge! :running:
 </details>
 
 <a href='./contracts/01-fallback/'>Contracts</a> | <a href='./scripts/01-fallback.ts'>Script</a>
+
+## 02. Fallout
+
+### Challenge
+
+Claim ownership of the contract below to complete this level.
+
+Things that might help:
+
+- Solidity Remix IDE
+
+<details>
+  <summary>Instance</summary>
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.0;
+
+import 'openzeppelin-contracts-06/math/SafeMath.sol';
+
+contract Fallout {
+
+  using SafeMath for uint256;
+  mapping (address => uint) allocations;
+  address payable public owner;
+
+
+  /* constructor */
+  function Fal1out() public payable {
+    owner = msg.sender;
+    allocations[owner] = msg.value;
+  }
+
+  modifier onlyOwner {
+	        require(
+	            msg.sender == owner,
+	            "caller is not the owner"
+	        );
+	        _;
+	    }
+
+  function allocate() public payable {
+    allocations[msg.sender] = allocations[msg.sender].add(msg.value);
+  }
+
+  function sendAllocation(address payable allocator) public {
+    require(allocations[allocator] > 0);
+    allocator.transfer(allocations[allocator]);
+  }
+
+  function collectAllocations() public onlyOwner {
+    msg.sender.transfer(address(this).balance);
+  }
+
+  function allocatorBalance(address allocator) public view returns (uint) {
+    return allocations[allocator];
+  }
+}
+```
+
+</details>
+
+### Solution
+
+<details>
+  <summary>Description</summary>
+
+Since Solidity v0.4.23, constructors are now specified using the `constructor` keyword.
+Before this version, the constructor was a function whose name was the same as the name of the contract.
+Since Solidity [v0.5.0](https://docs.soliditylang.org/en/v0.8.24/050-breaking-changes.html#constructors) constructors must be defined using the `constructor` keyword.
+
+The only place in the contract where the owner is set is in the `Fal1out` function. According to the creator of the contract, this should have been a constructor that would work once and could not be called again. In this case, hacking would not have been possible (for solidity version less than v0.5.0). However, the author made a typo in the name of the constructor and instead of `Fallout` it turned out to be `Fal1out`. And now we can easily withdraw money from the contract.
+
+1. Call the `Fal1out` function. We become the owner of the contract.
+2. Call the `collectAllocations` function. We get all the money from the contract.
+
+</details>
+
+<details>
+  <summary>Browser Console Solution</summary>
+
+```javascript
+// 1
+await contract.Fal1out({ value: _ethers.utils.parseUnits('1', 'wei') });
+
+// 2
+await contract.collectAllocations();
+```
+
+Then click the "Submit instance" button.
+
+Congratulations! :wink: Let's move on to the next challenge! :running:
+
+</details>
+
+<details>
+  <summary>Real World Example Described By OpenZeppelin</summary>
+
+That was silly wasn't it? Real world contracts must be much more secure than this and so must it be much harder to hack them right?
+
+Well... Not quite.
+
+The story of Rubixi is a very well known case in the Ethereum ecosystem. The company changed its name from 'Dynamic Pyramid' to 'Rubixi' but somehow they didn't rename the constructor method of its contract:
+
+```solidity
+contract Rubixi {
+  address private owner;
+  function DynamicPyramid() { owner = msg.sender; }
+  function collectAllFees() { owner.transfer(this.balance) }
+  ...
+}
+```
+
+This allowed the attacker to call the old constructor and claim ownership of the contract, and steal some funds. Yep. Big mistakes can be made in smartcontractland.
+
+</details>
+
+<a href='./contracts/02-fallout/'>Contracts</a> | <a href='./scripts/02-fallout.ts'>Script</a>
