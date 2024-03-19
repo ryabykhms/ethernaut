@@ -9,6 +9,7 @@
     "pass:02-fallout": "yarn hardhat run scripts/02-fallout.ts",
     "pass:03-coin-flip": "yarn hardhat run scripts/03-coin-flip.ts",
     "pass:04-telephone": "yarn hardhat run scripts/04-telephone.ts",
+    "pass:05-token": "yarn hardhat run scripts/05-token.ts",
     "coverage": "yarn hardhat coverage",
     "test": "yarn hardhat test"
   },

