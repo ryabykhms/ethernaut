@@ -64,6 +64,16 @@ My [Ethernaut](https://ethernaut.openzeppelin.com/) CTF Solutions.
 </ol>
 </details>
 
+<details>
+<summary>
+<a href="#06-delegation">06. Delegation</a>
+</summary>
+<ol>
+    <li><a href="./contracts/06-delegation/">Contracts</a></li>
+    <li><a href="./scripts/06-delegation.ts">Script</a></li>
+</ol>
+</details>
+
 ## 00. Hello Ethernaut
 
 This is a warm-up task. Call `await contract.info()` in the console and follow the instructions.
@@ -670,3 +680,105 @@ If there is an overflow, the code will revert.
 </details>
 
 <a href='./contracts/05-token/'>Contracts</a> | <a href='./scripts/05-token.ts'>Script</a>
+
+## 06. Delegation
+
+### Challenge
+
+The goal of this level is for you to claim ownership of the instance you are given.
+
+Things that might help:
+
+- Look into Solidity's documentation on the `delegatecall` low level function, how it works, how it can be used to delegate operations to on-chain libraries, and what implications it has on execution scope.
+- Fallback methods
+- Method ids
+
+<details>
+  <summary>Instance</summary>
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Delegate {
+
+  address public owner;
+
+  constructor(address _owner) {
+    owner = _owner;
+  }
+
+  function pwn() public {
+    owner = msg.sender;
+  }
+}
+
+contract Delegation {
+
+  address public owner;
+  Delegate delegate;
+
+  constructor(address _delegateAddress) {
+    delegate = Delegate(_delegateAddress);
+    owner = msg.sender;
+  }
+
+  fallback() external {
+    (bool result,) = address(delegate).delegatecall(msg.data);
+    if (result) {
+      this;
+    }
+  }
+}
+```
+
+</details>
+
+### Solution
+
+<details>
+  <summary>Description</summary>
+
+The `Delegation` contract has a `fallback` function that calls the `Delegate` contract function using `delegatecall`.
+
+The `fallback` function fires when we try to call a non-existent contract function.
+
+`delegatecall` is a low-level call that executes the code of the called function (any function from `Delegate`) within the framework of the calling smart contract (`Delegation`). We can say that the code is copied from the remote smart contract to the calling smart contract. Thus, when executing this code, the storage of the called smart contract (`Delegation`) is used.
+
+Smart contract storage consists of 32-byte slots. In `Delegation` the `owner` is specified in the first slot and in `Delegate` the `owner` is specified in the first slot.
+
+As we can see, in the `Delegate` contract the owner is set in the `pwn` function. If we call this function within the `Delegation` contract, we can set the owner of the `Delegation` contract.
+
+In order for the `fallback` method to work, we need to pass `data` to call the `pwn()` function.
+
+Here `data` represents the function signature. Function signature - 4 bytes from the hash of the function name and parameter types (`pwn()` = `0xdd365b8b`).
+
+</details>
+
+<details>
+  <summary>Browser Console Solution</summary>
+
+```javascript
+// 1
+const methodId = _ethers.utils.id('pwn()').substring(0, 10);
+
+// 2
+await sendTransaction({ from: player, to: contract.address, data: methodId });
+```
+
+Then click the "Submit instance" button.
+
+Congratulations! :wink: Let's move on to the next challenge! :running:
+
+</details>
+
+<details>
+  <summary>Comments From OpenZeppelin</summary>
+
+Usage of `delegatecall` is particularly risky and has been used as an attack vector on multiple historic hacks. With it, your contract is practically saying "here, -other contract- or -other library-, do whatever you want with my state". Delegates have complete access to your contract's state. The `delegatecall` function is a powerful feature, but a dangerous one, and must be used with extreme care.
+
+Please refer to the [The Parity Wallet Hack Explained](https://blog.openzeppelin.com/on-the-parity-wallet-multisig-hack-405a8c12e8f7) article for an accurate explanation of how this idea was used to steal 30M USD.
+
+</details>
+
+<a href='./contracts/06-delegation/'>Contracts</a> | <a href='./scripts/06-delegation.ts'>Script</a>

@@ -10,6 +10,7 @@
     "pass:03-coin-flip": "yarn hardhat run scripts/03-coin-flip.ts",
     "pass:04-telephone": "yarn hardhat run scripts/04-telephone.ts",
     "pass:05-token": "yarn hardhat run scripts/05-token.ts",
+    "pass:06-delegation": "yarn hardhat run scripts/06-delegation.ts",
     "coverage": "yarn hardhat coverage",
     "test": "yarn hardhat test"
   },
