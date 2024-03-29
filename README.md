@@ -84,6 +84,16 @@ My [Ethernaut](https://ethernaut.openzeppelin.com/) CTF Solutions.
 </ol>
 </details>
 
+<details>
+<summary>
+<a href="#08-vault">08. Vault</a>
+</summary>
+<ol>
+    <li><a href="./contracts/08-vault/">Contracts</a></li>
+    <li><a href="./scripts/08-vault.ts">Script</a></li>
+</ol>
+</details>
+
 ## 00. Hello Ethernaut
 
 This is a warm-up task. Call `await contract.info()` in the console and follow the instructions.
@@ -880,3 +890,84 @@ However, there is no way to stop an attacker from sending ether to a contract by
 </details>
 
 <a href='./contracts/07-force/'>Contracts</a> | <a href='./scripts/07-force.ts'>Script</a>
+
+## 08. Vault
+
+### Challenge
+
+Unlock the vault to pass the level!
+
+<details>
+  <summary>Instance</summary>
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Vault {
+  bool public locked;
+  bytes32 private password;
+
+  constructor(bytes32 _password) {
+    locked = true;
+    password = _password;
+  }
+
+  function unlock(bytes32 _password) public {
+    if (password == _password) {
+      locked = false;
+    }
+  }
+}
+
+```
+
+</details>
+
+### Solution
+
+<details>
+  <summary>Description</summary>
+
+In order to hack the contract, we need to set the `locked` variable to `false`. To do this we need to know `password`. This variable is private and is set in the constructor.
+
+However, everything that is in the blockchain (storage variables) is public. And we can get the value of any variable from storage.
+The location of the variable in storage depends on its location in the smart contract and on the data type.
+
+We have 2 storage variables:
+
+1. `bool public locked`. Located in storage slot 0.
+2. `bytes32 private password`. Located in 1 storage slot.
+
+Using an rpc call, we can find out what value is located in a specific contract slot and thus obtain the `password`:
+`await web3.eth.getStorageAt(contract.address, 0x1);`
+
+</details>
+
+<details>
+  <summary>Browser Console Solution</summary>
+
+```javascript
+// 1
+const password = await web3.eth.getStorageAt(contract.address, 0x1);
+
+// 2
+await contract.unlock(password);
+```
+
+Then click the "Submit instance" button.
+
+Congratulations! :wink: Let's move on to the next challenge! :running:
+
+</details>
+
+<details>
+  <summary>Comments From OpenZeppelin</summary>
+
+It's important to remember that marking a variable as private only prevents other contracts from accessing it. State variables marked as private and local variables are still publicly accessible.
+
+To ensure that data is private, it needs to be encrypted before being put onto the blockchain. In this scenario, the decryption key should never be sent on-chain, as it will then be visible to anyone who looks for it. [zk-SNARKs](https://blog.ethereum.org/2016/12/05/zksnarks-in-a-nutshell/) provide a way to determine whether someone possesses a secret parameter, without ever having to reveal the parameter.
+
+</details>
+
+<a href='./contracts/08-vault/'>Contracts</a> | <a href='./scripts/08-vault.ts'>Script</a>
