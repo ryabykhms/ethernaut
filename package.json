@@ -13,6 +13,7 @@
     "pass:06-delegation": "yarn hardhat run scripts/06-delegation.ts",
     "pass:07-force": "yarn hardhat run scripts/07-force.ts",
     "pass:08-vault": "yarn hardhat run scripts/08-vault.ts",
+    "pass:09-king": "yarn hardhat run scripts/09-king.ts",
     "coverage": "yarn hardhat coverage",
     "test": "yarn hardhat test"
   },
